@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Expenses - Snacks Billing{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Expenses</h1>
+            <p class="text-gray-600 mt-1">Track your business expenses</p>
+        </div>
+        <a href="{% url 'expense_create' %}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+            Add Expense
+        </a>
+    </div>
+    
+    <!-- Summary Card -->
+    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+        <p class="text-gray-500 text-sm font-medium">Total Expenses</p>
+        <p class="text-4xl font-bold text-gray-900 mt-2">₹{{ total_expenses|floatformat:2 }}</p>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Date</th>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Category</th>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Description</th>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Amount</th>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for expense in expenses %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ expense.date|date:'M d, Y' }}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                {{ expense.get_category_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm">{{ expense.description }}</td>
+                        <td class="px-6 py-4 font-bold text-gray-900">₹{{ expense.amount|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-sm space-x-2">
+                            <a href="{% url 'expense_edit' expense.id %}" class="text-gray-600 hover:text-gray-900">Edit</a>
+                            <button onclick="if(confirmDelete()) fetch('{% url 'expense_delete' expense.id %}', {method: 'POST', headers: {'X-CSRFToken': getCookie('csrftoken')}}).then(r => r.json()).then(d => { if(d.success) location.reload(); })" class="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                            No expenses recorded. <a href="{% url 'expense_create' %}" class="text-blue-600 hover:underline">Add one</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

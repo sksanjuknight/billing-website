@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ labour.name }} - Labour Details - Snacks Billing{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ labour.name }}</h1>
+            <p class="text-gray-600 mt-1">Worker Details & Attendance History</p>
+        </div>
+        <div class="flex gap-3 flex-wrap">
+            <a href="{% url 'labour_edit' labour.id %}" 
+               class="bg-gray-600 text-white px-6 py-2.5 rounded-lg hover:bg-gray-700 transition">
+                Edit Worker
+            </a>
+            
+            <!-- Simple form-based delete with confirmation -->
+            <form method="post" action="{% url 'labour_delete' labour.id %}" 
+                  onsubmit="return confirm('Are you sure you want to delete worker \'{{ labour.name }}\'? This cannot be undone.');"
+                  style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-600 text-white px-6 py-2.5 rounded-lg hover:bg-red-700 transition">
+                    Delete Worker
+                </button>
+            </form>
+            
+            <a href="{% url 'labour_list' %}" 
+               class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition">
+                Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="space-y-3">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg border-l-4 {% if message.tags == 'success' %}bg-green-50 border-green-500 text-green-800{% else %}bg-red-50 border-red-500 text-red-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Worker Info Card -->
+    <div class="bg-white rounded-xl shadow-md p-8 border border-gray-100">
+        <h2 class="text-2xl font-semibold mb-6">Worker Information</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+                <p class="text-sm text-gray-600">Name</p>
+                <p class="text-lg font-medium">{{ labour.name }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Phone</p>
+                <p class="text-lg font-medium">{{ labour.phone|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Daily Wage</p>
+                <p class="text-xl font-bold text-green-700">₹{{ labour.daily_wage|floatformat:2 }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Role / Type</p>
+                <span class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                    {{ labour.role|title|default:"Other" }}
+                </span>
+            </div>
+            <div class="md:col-span-3">
+                <p class="text-sm text-gray-600">Address / Notes</p>
+                <p class="text-lg font-medium">{{ labour.address|default:"-" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month Selector & Attendance Summary -->
+    <div class="bg-white rounded-xl shadow-md p-8 border border-gray-100">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h2 class="text-2xl font-semibold">Attendance & Wage Summary</h2>
+            
+            <div class="flex items-center gap-4 flex-wrap">
+                <!-- Year dropdown: now using pre-computed years from view -->
+                <select id="year-select" class="border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    {% for y in available_years %}
+                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+
+                <select id="month-select" class="border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    {% for value, name in month_choices %}
+                        <option value="{{ value }}" {% if value == month|stringformat:"s" %}selected{% endif %}>
+                            {{ name }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <button onclick="updateMonth()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    Update
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 text-center">
+                <p class="text-sm text-gray-600">Days Worked</p>
+                <p class="text-3xl font-bold text-green-700">{{ summary.days_worked|default:0 }}</p>
+            </div>
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 text-center">
+                <p class="text-sm text-gray-600">Total Wages</p>
+                <p class="text-3xl font-bold text-green-700">₹{{ summary.total_wages|default:0|floatformat:2 }}</p>
+            </div>
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 text-center">
+                <p class="text-sm text-gray-600">Paid Amount</p>
+                <p class="text-3xl font-bold text-blue-700">₹{{ summary.paid_amount|default:0|floatformat:2 }}</p>
+            </div>
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 text-center">
+                <p class="text-sm text-gray-600">Balance Due</p>
+                <p class="text-3xl font-bold {% if summary.balance_due > 0 %}text-red-700{% else %}text-green-700{% endif %}">
+                    ₹{{ summary.balance_due|default:0|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Attendance Table -->
+        {% if attendances %}
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-max">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Date</th>
+                            <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Present</th>
+                            <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Wage</th>
+                            <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for att in attendances %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm text-gray-600">{{ att.date|date:"d M Y" }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 text-xs font-medium rounded-full {% if att.present %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ att.present|yesno:"Present,Absent" }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm font-medium">₹{{ att.daily_wage|floatformat:2 }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">{{ att.notes|default:"-" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-center py-12">No attendance records for {{ month_name }} {{ year }}.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Month Switch Script -->
+<script>
+function updateMonth() {
+    const year = document.getElementById('year-select').value;
+    const month = document.getElementById('month-select').value;
+    const url = new URL(window.location);
+    url.searchParams.set('year', year);
+    url.searchParams.set('month', month);
+    window.location = url.toString();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,18 @@
+<nav class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+        <h2 class="text-2xl font-bold text-gray-800">KALPATARU ENTERPRISES</h2>
+    </div>
+    
+    <div class="flex items-center gap-4">
+        <span class="text-gray-600">Welcome, <strong>{{ user.get_full_name|default:user.username }}</strong></span>
+        
+        <div class="relative group">
+            <button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition">
+                Account
+            </button>
+            <div class="hidden group-hover:block absolute right-0 mt-0 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Logout</a>
+            </div>
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Labour Management - Snacks Billing{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Labour Management</h1>
+            <p class="text-gray-600 mt-1">Track your workers and manage attendance</p>
+        </div>
+        <a href="{% url 'labour_create' %}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+            Add Worker
+        </a>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for labour in labour_list %}
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+            <h3 class="text-lg font-semibold text-gray-900">{{ labour.name }}</h3>
+            <div class="mt-4 space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Phone</span>
+                    <span>{{ labour.phone|default:"N/A" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Daily Wage</span>
+                    <span class="font-bold">₹{{ labour.daily_wage|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Status</span>
+                    <span class="px-2 py-1 text-xs font-medium rounded-full {% if labour.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {% if labour.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="mt-4 flex gap-2">
+                <a href="{% url 'labour_detail' labour.id %}" class="flex-1 bg-blue-600 text-white py-2 px-3 rounded hover:bg-blue-700 transition text-center text-sm font-medium">
+                    View
+                </a>
+                <a href="{% url 'labour_edit' labour.id %}" class="flex-1 bg-gray-600 text-white py-2 px-3 rounded hover:bg-gray-700 transition text-center text-sm font-medium">
+                    Edit
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12 bg-white rounded-lg">
+            <p class="text-gray-500 mb-4">No workers registered</p>
+            <a href="{% url 'labour_create' %}" class="text-blue-600 hover:underline">Add your first worker</a>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="flex gap-4">
+        <a href="{% url 'wage_summary' %}" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+            View Wage Summary
+        </a>
+    </div>
+</div>
+{% endblock %}

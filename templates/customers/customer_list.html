@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Customers - Snacks Billing{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Customers / Parties</h1>
+            <p class="text-gray-600 mt-1">Manage your customers and track their balances</p>
+        </div>
+        <a href="{% url 'customer_create' %}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+            Add Customer
+        </a>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Name</th>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Phone</th>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Type</th>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Total Billed</th>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Balance</th>
+                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for data in customer_data %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">
+                            <a href="{% url 'customer_detail' data.customer.id %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                                {{ data.customer.name }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ data.customer.phone }}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="px-3 py-1 text-xs font-medium rounded-full
+                                {% if data.customer.customer_type == 'retail' %}bg-blue-100 text-blue-800
+                                {% elif data.customer.customer_type == 'wholesale' %}bg-purple-100 text-purple-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ data.customer.get_customer_type_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 font-medium text-gray-900">₹{{ data.total_billed|floatformat:2 }}</td>
+                        <td class="px-6 py-4">
+                            <span class="font-bold {% if data.current_balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                ₹{{ data.current_balance|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm space-x-2">
+                            <a href="{% url 'customer_edit' data.customer.id %}" class="text-gray-600 hover:text-gray-900">Edit</a>
+                            <button onclick="if(confirmDelete()) fetch('{% url 'customer_delete' data.customer.id %}', {method: 'POST', headers: {'X-CSRFToken': getCookie('csrftoken')}}).then(r => r.json()).then(d => { if(d.success) location.reload(); })" class="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            No customers yet. <a href="{% url 'customer_create' %}" class="text-blue-600 hover:underline">Add one now</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

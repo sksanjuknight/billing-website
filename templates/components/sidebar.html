@@ -1,0 +1,93 @@
+<aside class="w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white p-6 flex flex-col overflow-y-auto">
+    <!-- Logo -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold">My Billing</h1>
+        <p class="text-blue-200 text-sm">Book System</p>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="flex-1 space-y-2">
+        <!-- Dashboard -->
+        <a href="{% url 'dashboard' %}" class="block px-4 py-3 rounded-lg hover:bg-blue-700 transition {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-700{% endif %}">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 5v14a1 1 0 001 1h12a1 1 0 001-1V5m0 0L9.172 3.172a2 2 0 00-2.828 0L3 5m14 6v6a1 1 0 01-1 1H6a1 1 0 01-1-1v-6m14 0H5"/>
+                </svg>
+                Dashboard
+            </span>
+        </a>
+        
+        <!-- Products -->
+        <a href="{% url 'product_list' %}" class="block px-4 py-3 rounded-lg hover:bg-blue-700 transition {% if 'product' in request.resolver_match.url_name %}bg-blue-700{% endif %}">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m0 0l8 4m-8-4v10l8 4m0-10l8 4m-8-4v10"/>
+                </svg>
+                Products
+            </span>
+        </a>
+        
+        <!-- Billing -->
+        <a href="{% url 'billing:invoice_list' %}" class="block px-4 py-3 rounded-lg hover:bg-blue-700 transition {% if 'invoice' in request.resolver_match.url_name or 'billing' in request.resolver_match.url_name %}bg-blue-700{% endif %}">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Billing
+            </span>
+        </a>
+        
+        <!-- Customers -->
+        <a href="{% url 'customer_list' %}" class="block px-4 py-3 rounded-lg hover:bg-blue-700 transition {% if 'customer' in request.resolver_match.url_name %}bg-blue-700{% endif %}">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a6 6 0 0112 0v2H6v-2z"/>
+                </svg>
+                Customers
+            </span>
+        </a>
+        
+        <!-- Expenses & Payments -->
+        <a href="{% url 'expense_list' %}" class="block px-4 py-3 rounded-lg hover:bg-blue-700 transition {% if 'expense' in request.resolver_match.url_name or 'payment' in request.resolver_match.url_name %}bg-blue-700{% endif %}">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Expenses
+            </span>
+        </a>
+        
+        <!-- Labour -->
+        <a href="{% url 'labour_list' %}" class="block px-4 py-3 rounded-lg hover:bg-blue-700 transition {% if 'labour' in request.resolver_match.url_name %}bg-blue-700{% endif %}">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                </svg>
+                Labour
+            </span>
+        </a>
+        
+        <!-- Reports -->
+        <a href="{% url 'reports_dashboard' %}" class="block px-4 py-3 rounded-lg hover:bg-blue-700 transition {% if 'report' in request.resolver_match.url_name %}bg-blue-700{% endif %}">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Reports
+            </span>
+        </a>
+    </nav>
+    
+    <!-- Admin Link -->
+    <div class="border-t border-blue-700 pt-4 mt-4">
+        <a href="{% url 'admin:index' %}" class="block px-4 py-3 rounded-lg hover:bg-blue-700 transition text-blue-100">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Admin
+            </span>
+        </a>
+    </div>
+</aside>

@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Logging Out...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center 
+bg-gradient-to-br from-indigo-800 via-purple-800 to-pink-700">
+
+<div class="relative">
+    <!-- Glow -->
+    <div class="absolute inset-0 blur-3xl bg-pink-500/40 rounded-full"></div>
+
+    <!-- Glass Card -->
+    <div class="relative bg-white/10 backdrop-blur-xl 
+    border border-white/20 rounded-3xl 
+    shadow-2xl p-12 text-center text-white 
+    max-w-md w-full">
+
+        <div class="mb-6">
+            <div class="w-20 h-20 mx-auto rounded-full 
+            bg-gradient-to-tr from-pink-500 to-yellow-400 
+            flex items-center justify-center 
+            shadow-xl animate-pulse">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7"/>
+                </svg>
+            </div>
+        </div>
+
+        <h1 class="text-3xl font-bold mb-2">
+            Logging you out...
+        </h1>
+
+        <p class="text-white/70 mb-6">
+            See you again soon 👋
+        </p>
+
+        <div class="h-2 w-full bg-white/20 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r 
+            from-pink-500 to-yellow-400 
+            animate-[progress_2s_linear] w-full"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+setTimeout(() => {
+    window.location.href = "/accounts/login/";
+}, 1800);
+</script>
+
+<style>
+@keyframes progress {
+  from { width: 0; }
+  to { width: 100%; }
+}
+</style>
+
+</body>
+</html>

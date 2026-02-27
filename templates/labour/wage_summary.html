@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Wage Summary - Snacks Billing{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Wage Summary</h1>
+            <p class="text-gray-600 mt-1">Overview of all workers' wages for {{ month_name }} {{ year }}</p>
+        </div>
+        <div class="flex gap-3 items-center flex-wrap">
+            <!-- Year Selector -->
+            <select id="year-select" class="border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <option value="2024" {% if year == 2024 %}selected{% endif %}>2024</option>
+                <option value="2025" {% if year == 2025 %}selected{% endif %}>2025</option>
+                <option value="2026" {% if year == 2026 %}selected{% endif %}>2026</option>
+                <option value="2027" {% if year == 2027 %}selected{% endif %}>2027</option>
+                <option value="2028" {% if year == 2028 %}selected{% endif %}>2028</option>
+                <option value="2029" {% if year == 2029 %}selected{% endif %}>2029</option>
+                <option value="2030" {% if year == 2030 %}selected{% endif %}>2030</option>
+            </select>
+
+            <!-- Month Selector (now placed right after year) -->
+            <select id="month-select" class="border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                {% for value, name in month_choices %}
+                    <option value="{{ value }}" {% if value == month|stringformat:"s" %}selected{% endif %}>
+                        {{ name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button onclick="updateMonth()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Update
+            </button>
+
+            <a href="{% url 'labour_list' %}" class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition">
+                Back to Workers
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="space-y-3">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg border-l-4 {% if message.tags == 'success' %}bg-green-50 border-green-500 text-green-800{% else %}bg-red-50 border-red-500 text-red-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Summary Table -->
+    {% if wage_data %}
+        <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-max">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700">Worker Name</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700">Days Worked</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700">Total Wages</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700">Paid Amount</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700">Balance Due</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for item in wage_data %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium text-gray-900">{{ item.labour.name }}</td>
+                                <td class="px-6 py-4 text-gray-700">{{ item.summary.days_worked }}</td>
+                                <td class="px-6 py-4 text-green-700 font-bold">₹{{ item.summary.total_wages|floatformat:2 }}</td>
+                                <td class="px-6 py-4 text-blue-700 font-bold">₹{{ item.summary.paid_amount|floatformat:2 }}</td>
+                                <td class="px-6 py-4 {% if item.summary.balance_due > 0 %}text-red-700 font-bold{% else %}text-green-700{% endif %}">
+                                    ₹{{ item.summary.balance_due|floatformat:2 }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <a href="{% url 'labour_detail' item.labour.id %}?year={{ year }}&month={{ month }}" 
+                                       class="text-blue-600 hover:text-blue-800 font-medium">
+                                        View Details
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="bg-white rounded-xl shadow-md p-12 text-center border border-gray-100">
+            <p class="text-gray-500 text-lg">No workers found for {{ month_name }} {{ year }}.</p>
+            <a href="{% url 'labour_create' %}" class="mt-4 inline-block text-blue-600 hover:text-blue-800 font-medium">
+                Add your first worker →
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Month Switch JS -->
+<script>
+function updateMonth() {
+    const year = document.getElementById('year-select').value;
+    const month = document.getElementById('month-select').value;
+    window.location.href = `?year=${year}&month=${month}`;
+}
+</script>
+{% endblock %}

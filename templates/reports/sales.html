@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Analysis Report - Snacks Billing{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header & Filter -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Sales Analysis Report</h1>
+            <p class="text-gray-600 mt-1">
+                Period: {{ start_date|date:"d M Y" }} to {{ end_date|date:"d M Y" }}
+            </p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'reports_dashboard' %}" 
+               class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-2.5 rounded-lg transition flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Reports
+            </a>
+            <button onclick="window.print()" 
+                    class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg transition flex items-center gap-2 shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Export as PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+            <p class="text-sm font-medium text-gray-500">Total Sales</p>
+            <p class="text-4xl font-bold text-blue-700 mt-2">₹{{ total_sales|floatformat:2 }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+            <p class="text-sm font-medium text-gray-500">Average Daily Sales</p>
+            <p class="text-4xl font-bold text-indigo-700 mt-2">₹{{ average_daily_sales|floatformat:2 }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+            <p class="text-sm font-medium text-gray-500">Number of Invoices</p>
+            <p class="text-4xl font-bold text-green-700 mt-2">{{ invoice_count }}</p>
+        </div>
+    </div>
+
+    <!-- Interactive Daily Sales Chart with Trend Line -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-10">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h2 class="text-xl font-semibold text-gray-900">Daily Sales Trend (with Linear Regression)</h2>
+            <div class="flex flex-wrap gap-3">
+                <button onclick="resetZoom()" 
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition text-sm">
+                    Reset Zoom
+                </button>
+                <button onclick="downloadChart()" 
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition text-sm">
+                    Download Chart
+                </button>
+            </div>
+        </div>
+        <div class="h-96 relative">
+            <canvas id="dailySalesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Customers -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Top Customers by Sales</h2>
+        
+        {% if customer_sales %}
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-max">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Customer</th>
+                            <th class="px-6 py-3 text-right text-sm font-medium text-gray-700">Total Sales</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for sale in customer_sales %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                    {{ sale.customer__name|default:"Unknown" }}
+                                </td>
+                                <td class="px-6 py-4 text-right text-sm font-bold text-blue-700">
+                                    ₹{{ sale.total|floatformat:2 }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-center py-8">No sales data in this period.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Chart.js + Zoom + Trendline Plugins -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const dailySalesData = {{ daily_sales|safe }};
+    const labels = Object.keys(dailySalesData);
+    const data = Object.values(dailySalesData);
+
+    // Simple linear regression for trend line
+    function calculateTrendLine(labels, data) {
+        const n = data.length;
+        if (n < 2) return [];
+
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        labels.forEach((label, i) => {
+            const x = i;  // Use index as x-value
+            const y = data[i];
+            sumX += x;
+            sumY += y;
+            sumXY += x * y;
+            sumX2 += x * x;
+        });
+
+        const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+
+        return labels.map((_, i) => intercept + slope * i);
+    }
+
+    const trendData = calculateTrendLine(labels, data);
+
+    const ctx = document.getElementById('dailySalesChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Daily Sales (₹)',
+                    data: data,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 8,
+                    pointRadius: 5,
+                    borderWidth: 3,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Trend Line',
+                    data: trendData,
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0,
+                    tension: 0,
+                    yAxisID: 'y'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { 
+                    display: true,
+                    position: 'top',
+                    labels: { font: { size: 14 } }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleFont: { size: 14 },
+                    bodyFont: { size: 14 },
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            if (context.dataset.label === 'Trend Line') {
+                                return 'Trend: ₹' + context.parsed.y.toLocaleString('en-IN');
+                            }
+                            return 'Sales: ₹' + context.parsed.y.toLocaleString('en-IN');
+                        }
+                    }
+                },
+                zoom: {
+                    zoom: {
+                        wheel: { enabled: true, speed: 0.1 },
+                        pinch: { enabled: true },
+                        mode: 'x',
+                    },
+                    pan: {
+                        enabled: true,
+                        mode: 'x',
+                    },
+                    limits: {
+                        x: { min: 'original', max: 'original' }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Date', font: { size: 14 } },
+                    grid: { display: false }
+                },
+                y: {
+                    title: { display: true, text: 'Sales (₹)', font: { size: 14 } },
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString('en-IN');
+                        }
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Reset zoom
+    window.resetZoom = function() {
+        chart.resetZoom();
+    };
+
+    // Download chart as PNG
+    window.downloadChart = function() {
+        const link = document.createElement('a');
+        link.download = 'daily-sales-trend-chart.png';
+        link.href = chart.toBase64Image();
+        link.click();
+    };
+});
+</script>
+
+<!-- Print Styles -->
+<style media="print">
+    nav, header, footer, button, form {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+    }
+</style>
+{% endblock %}

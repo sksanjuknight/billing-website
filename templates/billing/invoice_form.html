@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Invoice - Snacks Billing{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Create New Invoice</h1>
+            <p class="text-gray-600 mt-1">Fill in the details to generate a new invoice</p>
+        </div>
+        <a href="{% url 'billing:invoice_list' %}" class="text-blue-600 hover:text-blue-800 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Back to Invoices
+        </a>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="space-y-3">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg border-l-4 {% if message.tags == 'success' %}bg-green-50 border-green-500 text-green-800{% else %}bg-red-50 border-red-500 text-red-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Form Container -->
+    <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+        <!-- Hidden form for CSRF -->
+        <form id="invoice-form" method="post">
+            {% csrf_token %}
+        </form>
+
+        <!-- Main Invoice Info -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Customer *</label>
+                <select id="customer-select" name="customer" required
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">Select Customer</option>
+                    {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }} ({{ customer.phone|default:"-" }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Invoice Date *</label>
+                <input type="date" id="invoice-date" name="invoice_date" required
+                       class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                <input type="date" id="due-date" name="due_date"
+                       class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="mb-10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Invoice Items</h2>
+                <button type="button" id="add-item-btn"
+                        class="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add Item
+                </button>
+            </div>
+
+            <div id="items-container" class="space-y-6">
+                <!-- Dynamic rows will be added here via JS -->
+            </div>
+        </div>
+
+        <!-- Summary + Payment Info -->
+        <div class="border-t pt-6 mb-8">
+            <div class="flex flex-col md:flex-row justify-end gap-12 text-lg font-medium">
+                <div class="text-right">
+                    <p class="text-gray-600">Subtotal</p>
+                    <p id="subtotal" class="font-bold text-xl">₹0.00</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-600">GST</p>
+                    <p id="gst" class="font-bold text-xl">₹0.00</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-900 font-semibold text-2xl">Grand Total</p>
+                    <p id="grand-total" class="text-3xl font-bold text-green-700">₹0.00</p>
+                </div>
+            </div>
+
+            <!-- Payment at Creation (Optional) -->
+            <div class="mt-8 border-t pt-6">
+                <h3 class="text-lg font-semibold mb-4">Payment Received Now (Optional)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Amount Paid Now
+                        </label>
+                        <input type="number" step="0.01" min="0" id="amount-paid-input" name="amount_paid" value="0.00"
+                               class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <p class="text-xs text-gray-500 mt-1">Enter amount if customer is paying now (full or partial)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                        <select id="payment-method" name="payment_method"
+                                class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Select method (optional)</option>
+                            <option value="Cash">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Card">Card</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Balance & Status Preview -->
+            <div class="mt-8 border-t pt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-right md:text-left">
+                    <p class="text-gray-600 text-sm">Amount Paid</p>
+                    <p id="amount-paid-display" class="text-xl font-bold text-blue-700">₹0.00</p>
+                </div>
+                <div class="text-right md:text-left">
+                    <p class="text-gray-600 text-sm">Balance Due</p>
+                    <p id="balance-due-display" class="text-xl font-bold text-red-700">₹0.00</p>
+                </div>
+                <div class="text-right md:text-left">
+                    <p class="text-gray-600 text-sm">Status</p>
+                    <p id="status-display" class="text-xl font-semibold">Draft</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-4">
+            <button type="button" id="save-invoice-btn"
+                    class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-medium shadow-md">
+                Save & Create Invoice
+            </button>
+            <a href="{% url 'billing:invoice_list' %}" class="bg-gray-200 text-gray-800 px-8 py-3 rounded-lg hover:bg-gray-300 transition font-medium">
+                Cancel
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for dynamic items, calculation, and AJAX submit -->
+<script>
+const products = [
+    {% for product in products %}
+        { id: {{ product.id }}, name: "{{ product.name|escapejs }}", price: {{ product.retail_price }}, gst_rate: {{ product.gst_rate }} },
+    {% empty %}
+        // no products
+    {% endfor %}
+];
+
+// Add Item Row (unchanged)
+document.getElementById('add-item-btn')?.addEventListener('click', addItemRow);
+
+function addItemRow() {
+    const container = document.getElementById('items-container');
+    const index = container.children.length;
+
+    const row = document.createElement('div');
+    row.className = 'item-row border rounded-lg p-6 bg-gray-50 grid grid-cols-1 md:grid-cols-5 gap-4 items-end';
+    row.innerHTML = `
+        <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Product</label>
+            <select name="product" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 product-select">
+                <option value="">Select Product</option>
+                ${products.map(p => `<option value="${p.id}" data-price="${p.price}" data-gst="${p.gst_rate}">${p.name}</option>`).join('')}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+            <input type="number" name="quantity" min="1" value="1" required class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 quantity-input">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Unit Price</label>
+            <input type="number" step="0.01" name="price_per_unit" readonly class="w-full border-gray-300 rounded-lg bg-gray-100">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Total</label>
+            <input type="text" readonly class="w-full border-gray-300 rounded-lg bg-gray-100 total-input" value="₹0.00">
+        </div>
+        <div class="flex justify-end">
+            <button type="button" class="remove-item text-red-600 hover:text-red-800 text-sm font-medium">
+                Remove
+            </button>
+        </div>
+    `;
+
+    container.appendChild(row);
+
+    row.querySelector('.product-select').addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        const price = selected.dataset.price || 0;
+        const qtyInput = row.querySelector('.quantity-input');
+        const totalInput = row.querySelector('.total-input');
+        row.querySelector('input[name="price_per_unit"]').value = price;
+        updateTotal(qtyInput, totalInput, price);
+        updateGrandTotal();
+    });
+
+    row.querySelector('.quantity-input').addEventListener('input', function() {
+        const price = row.querySelector('input[name="price_per_unit"]').value || 0;
+        updateTotal(this, row.querySelector('.total-input'), price);
+        updateGrandTotal();
+    });
+
+    row.querySelector('.remove-item').addEventListener('click', () => {
+        row.remove();
+        updateGrandTotal();
+    });
+}
+
+function updateTotal(qtyInput, totalInput, price) {
+    const qty = parseFloat(qtyInput.value) || 0;
+    const total = qty * price;
+    totalInput.value = '₹' + total.toFixed(2);
+}
+
+function updateGrandTotal() {
+    let subtotal = 0;
+    let gstTotal = 0;
+
+    document.querySelectorAll('.item-row').forEach(row => {
+        const price = parseFloat(row.querySelector('input[name="price_per_unit"]').value) || 0;
+        const qty = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const gstRate = parseFloat(row.querySelector('.product-select option:checked')?.dataset.gst) || 0;
+
+        const itemTotal = qty * price;
+        const itemGst = itemTotal * (gstRate / 100);
+
+        subtotal += itemTotal;
+        gstTotal += itemGst;
+    });
+
+    const grandTotal = subtotal + gstTotal;
+
+    document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+    document.getElementById('gst').textContent = '₹' + gstTotal.toFixed(2);
+    document.getElementById('grand-total').textContent = '₹' + grandTotal.toFixed(2);
+
+    // Preview balance & status (live update)
+    const paidNow = parseFloat(document.getElementById('amount-paid-input')?.value) || 0;
+    const balance = Math.max(grandTotal - paidNow, 0);
+    document.getElementById('amount-paid-display').textContent = '₹' + paidNow.toFixed(2);
+    document.getElementById('balance-due-display').textContent = '₹' + balance.toFixed(2);
+
+    let previewStatus = 'Unpaid';
+    if (paidNow >= grandTotal) previewStatus = 'Paid';
+    else if (paidNow > 0) previewStatus = 'Partially Paid';
+    document.getElementById('status-display').textContent = previewStatus;
+}
+
+// Listen to amount paid input changes
+document.getElementById('amount-paid-input')?.addEventListener('input', updateGrandTotal);
+
+// Save Invoice (AJAX)
+document.getElementById('save-invoice-btn')?.addEventListener('click', async function() {
+    const customerId = document.getElementById('customer-select').value;
+    const invoiceDate = document.getElementById('invoice-date').value;
+    const dueDate = document.getElementById('due-date').value;
+    const amountPaid = document.getElementById('amount-paid-input')?.value || '0';
+
+    if (!customerId || !invoiceDate) {
+        alert('Please fill Customer and Invoice Date');
+        return;
+    }
+
+    const items = [];
+    document.querySelectorAll('.item-row').forEach(row => {
+        const productId = row.querySelector('.product-select').value;
+        const qty = row.querySelector('.quantity-input').value;
+        const price = row.querySelector('input[name="price_per_unit"]').value;
+
+        if (productId && qty && price) {
+            items.push({
+                product_id: productId,
+                quantity: qty,
+                price_per_unit: price,
+            });
+        }
+    });
+
+    if (items.length === 0) {
+        alert('Please add at least one item');
+        return;
+    }
+
+    const payload = {
+        customer: customerId,
+        invoice_date: invoiceDate,
+        due_date: dueDate || null,
+        items: items,
+        amount_paid: amountPaid
+    };
+
+    try {
+        const response = await fetch('{% url "billing:invoice_create" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert(`Invoice ${data.invoice_number} created successfully!`);
+            window.location.href = '{% url "billing:invoice_list" %}';
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Failed to create invoice');
+    }
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

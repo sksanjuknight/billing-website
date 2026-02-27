@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm 1.2cm;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12pt;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        /* Main Invoice Border (Keeps original width feel) */
+        .container {
+            max-width: 21cm;
+            margin: 0 auto;
+            border: 2px solid #1a3c5e;
+            padding: 20px 25px;
+        }
+
+        /* Header */
+        .store-header {
+            text-align: center;
+            margin-bottom: 1cm;
+            border-bottom: 2px solid #1a3c5e;
+            padding-bottom: 0.6cm;
+        }
+
+        .store-header h1 {
+            margin: 0;
+            font-size: 24pt;
+            color: #1a3c5e;
+            letter-spacing: 1px;
+        }
+
+        .store-header .address {
+            font-size: 10pt;
+            color: #444;
+            margin-top: 0.4cm;
+            line-height: 1.5;
+        }
+
+        /* Invoice Info */
+        .invoice-info {
+            width: 100%;
+            margin-bottom: 1cm;
+        }
+
+        .invoice-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .invoice-info td {
+            width: 50%;
+            vertical-align: top;
+            font-size: 11pt;
+            padding: 5px 0;
+        }
+
+        .invoice-info .right {
+            text-align: right;
+        }
+
+        /* Items Table */
+        table.items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1cm;
+        }
+
+        .items-table th,
+        .items-table td {
+            border: 1px solid #ccc;
+            padding: 8px 10px;
+            font-size: 11pt;
+        }
+
+        .items-table th {
+            background-color: #f2f4f7;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .items-table tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* Totals */
+        .totals-table {
+            width: 45%;
+            margin-left: auto;
+            border-collapse: collapse;
+            font-size: 11pt;
+        }
+
+        .totals-table td {
+            padding: 6px 5px;
+        }
+
+        .totals-table td:first-child {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .grand-total {
+            border-top: 2px solid #1a3c5e;
+            font-size: 14pt;
+            font-weight: bold;
+        }
+
+        /* Status */
+        .status-paid { color: #16a34a; font-weight: bold; }
+        .status-partial { color: #ea580c; font-weight: bold; }
+        .status-unpaid { color: #dc2626; font-weight: bold; }
+
+        /* Footer */
+        .footer {
+            margin-top: 1.5cm;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 0.6cm;
+        }
+
+        @media print {
+            button, a, .no-print {
+                display: none !important;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Store Header -->
+    <div class="store-header">
+        <h1>Kalpataru Enterprises</h1>
+        <div class="address">
+            Home Made Foods<br>
+            Mudhol Road, Near Junior College,<br>
+            Yelburga, Koppal, Karnataka - 583236<br>
+            Phone: +91 91876 36591
+        </div>
+    </div>
+
+    <!-- Invoice Details -->
+    <div class="invoice-info">
+        <table>
+            <tr>
+                <td>
+                    <strong>Invoice No:</strong> {{ invoice.invoice_number }}<br>
+                    <strong>Date:</strong> {{ invoice.invoice_date|date:"d M Y" }}<br>
+                    {% if invoice.due_date %}
+                        <strong>Due Date:</strong> {{ invoice.due_date|date:"d M Y" }}<br>
+                    {% endif %}
+                </td>
+                <td class="right">
+                    <strong>Customer:</strong> {{ invoice.customer.name|default:"Cash Customer" }}<br>
+                    {% if invoice.customer.phone %}
+                        <strong>Phone:</strong> {{ invoice.customer.phone }}<br>
+                    {% endif %}
+                    <strong>Status:</strong>
+                    <span class="{% if invoice.display_status == 'Paid' %}status-paid{% elif invoice.display_status == 'Partially Paid' %}status-partial{% else %}status-unpaid{% endif %}">
+                        {{ invoice.display_status }}
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Items -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items.all %}
+            <tr>
+                <td>{{ item.product.name|default:item.item_name }}</td>
+                <td class="text-center">{{ item.quantity|floatformat:0 }}</td>
+                <td class="text-right">₹{{ item.price_per_unit|floatformat:2 }}</td>
+                <td class="text-right">₹{{ item.line_total|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No items found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totals -->
+    <table class="totals-table">
+        <tr>
+            <td>Subtotal</td>
+            <td class="text-right">₹{{ invoice.subtotal|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td>GST</td>
+            <td class="text-right">₹{{ invoice.gst_total|floatformat:2 }}</td>
+        </tr>
+        {% if invoice.amount_paid > 0 %}
+        <tr>
+            <td>Amount Paid</td>
+            <td class="text-right">₹{{ invoice.amount_paid|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+        <tr class="grand-total">
+            <td>Grand Total / Balance Due</td>
+            <td class="text-right">₹{{ invoice.balance_due|floatformat:2 }}</td>
+        </tr>
+    </table>
+
+    <!-- Footer -->
+    <div class="footer">
+        Thank you for your business!<br>
+        For any queries contact us at +91 98806 24385
+    </div>
+
+</div>
+
+</body>
+</html>

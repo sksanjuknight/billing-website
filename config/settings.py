@@ -8,7 +8,7 @@ SECRET_KEY = 'django-insecure-snacks-billing-app-development-key-change-in-produ
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['billing-website-v327.onrender.com']
 
 SITE_ID = 2
 

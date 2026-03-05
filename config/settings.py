@@ -10,7 +10,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['billing-website-v327.onrender.com']
 
-SITE_ID = 2
+SITE_ID = 1
 
 INSTALLED_APPS = [
     'django.contrib.admin',

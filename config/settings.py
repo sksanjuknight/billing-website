@@ -6,11 +6,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-snacks-billing-app-development-key-change-in-production'
 
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['billing-website-v327.onrender.com']
+ALLOWED_HOSTS = [
+    "billing-website-v327.onrender.com",
+    "127.0.0.1",
+    "localhost"
+]
 
-SITE_ID = 1
+SITE_ID = 2
 
 INSTALLED_APPS = [
     'django.contrib.admin',
